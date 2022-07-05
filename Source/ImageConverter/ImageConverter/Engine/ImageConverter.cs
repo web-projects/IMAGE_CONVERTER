@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace ImageConverter.Engine
 {
@@ -21,28 +22,31 @@ namespace ImageConverter.Engine
             fileName = Path.Combine(filePath, SignatureFilename);
         }
 
-        public bool ConvertByteArrayToImage(byte[] byteArrayIn)
+        public bool ConvertByteArrayToImage(byte[] byteArrayIn, string filename)
         {
+            string targetFilename = Regex.Replace(fileName, SignatureFilename, $"{filename}.png");
+
             using (MemoryStream ms = new MemoryStream(byteArrayIn))
             {
-                using (var fs = new FileStream(fileName, FileMode.Create))
+                using (var fs = new FileStream(targetFilename, FileMode.Create))
                 {
                     ms.WriteTo(fs);
                 }
             }
 
-            return File.Exists(fileName);
+            return File.Exists(targetFilename);
         }
 
-        public void ImageDisplay()
+        public void ImageDisplay(string filename)
         {
             string path = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            string targetFilename = Regex.Replace(fileName, SignatureFilename, $"{filename}.png");
 
             ProcessStartInfo psi = new ProcessStartInfo("rundll32.exe",
                 String.Format("\"{0}{1}\", ImageView_Fullscreen {2}",
                     Environment.Is64BitOperatingSystem ? path.Replace(" (x86)", "") : path,
                     @"\Windows Photo Viewer\PhotoViewer.dll",
-                    fileName));
+                    targetFilename));
 
             psi.UseShellExecute = false;
 
@@ -52,7 +56,7 @@ namespace ImageConverter.Engine
             viewer.EnableRaisingEvents = true;
             viewer.Exited += (o, args) =>
             {
-                File.Delete(fileName);
+                File.Delete(targetFilename);
             };
         }
     }
